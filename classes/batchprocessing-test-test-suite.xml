@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="batchprocessing-test-test-suite.xml" />
+	<munit:test name="batchprocessing-test-test-suite-demand-sheet-processTest" doc:id="f69f087f-a179-4a79-a9d2-2ddb3bbcc6ea" description="Test">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="89327ede-6fa3-4a83-ae8e-c7eef0db877f" >
+				<munit:attributes value="#[{uriParams : {primaryskill :'Java'}}]" />
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to demand-sheet-process" doc:id="461cdc62-bfd9-404d-874c-18f9f4bac131" name="demand-sheet-process"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="35f7758c-3d6f-4d4d-88e6-c081ecd1cfe1" message="Payload is not empty" expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="batchprocessing-test-test-suite-demand-sheet-processTest1" doc:id="6f20d21b-4f9b-4583-a3d7-07e2ba6a58d8" description="Test" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="6c669b1c-05fb-4aa1-8548-d14e827a37fb" />
+			<flow-ref doc:name="Flow-ref to demand-sheet-process" doc:id="efb79a6e-78db-4371-b8ed-2da49bfcd999" name="demand-sheet-process"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="feadb80d-7a08-4b28-b137-784f5b839d23" is="#[MunitTools::notNullValue()]" expression="#[payload]" message="payload is not empty"/>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

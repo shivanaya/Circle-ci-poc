@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:java="http://www.mulesoft.org/schema/mule/java" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="ed329b26-f35d-4242-9314-6cdc6f58a09d" >
+		<file:connection workingDir="C:/" />
+	</file:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="6d03a5b8-357b-4155-90ce-6055cb81d5c6" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="demand-sheet-process" doc:id="11360586-9a90-4e7e-bd88-36a2c28ea246" >
+		<http:listener doc:name="Listener" doc:id="9bdb7826-7d89-41e3-8612-793c8ea9d0b1" config-ref="HTTP_Listener_config" path="/demand" >
+		</http:listener>
+		<set-variable value="#[attributes.uriParams.primaryskill]" doc:name="primary-skill" doc:id="7db8b69d-8a3b-45af-ae1a-108577aa5e85" variableName="primaryskill" />
+		<file:read doc:name="Read" doc:id="bed4c443-c141-4828-bbfa-0c7a2cf486a2" config-ref="File_Config" path="C:\New folder\Updated_Demand_Sheet.csv" />
+		<logger level="INFO" doc:name="Logger" doc:id="7ba650aa-5524-41ce-b0a3-9e0fc3e5f82d" message="message. #[attributes.filename]"/>
+		<ee:transform doc:name="Transform Message" doc:id="95f9d2f2-4660-427b-a5fe-a7344d47b6db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="b61a3435-29e9-463e-946d-a89acadb588d" message="payload in after transformation #[payload]"/>
+		<batch:job jobName="Batch_Job" doc:id="cabce157-e4d4-4350-b980-d6733fbe9be9" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="cbd1971e-41a7-417d-898c-d755a251e3e0" acceptPolicy="ALL">
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="4a37b863-feb2-4b0c-803a-0035c4b2f3b0" size="2" >
+						<logger level="INFO" doc:name="Logger" doc:id="01df6360-1ff6-4b23-a4bb-b32b71e499e3" message="payload in batch aggregator #[payload]"/>
+						<foreach doc:name="For Each" doc:id="ea69cbd1-0c5c-4a96-b07a-ee29040bdcd7" >
+							<logger level="INFO" doc:name="Logger" doc:id="2090c679-e64d-49c2-857e-02ae5b9f9a5b" />
+							<choice doc:name="Choice" doc:id="7af25575-512e-4c09-8665-a36e2aa2bd02">
+							<when expression="#[payload.PrimarySkills == 'Java']" doc:id="32d43cfe-67f5-4c6b-a0b5-d7c741c977fc">
+								<logger level="INFO" doc:name="Logger" doc:id="3bde7289-1ccf-4021-87a4-80e95020f85d" message='Is condition #[payload.PrimarySkills contains "Mulesoft Others"]'/>
+									<!-- <java:invoke-static doc:name="Invoke static" doc:id="7c8d8fe0-81b4-466d-8492-daee53768a0d" class="CreateFileInFolder" method="writeDataLineByLine(java.lang.String)"/> -->
+									<ee:transform doc:name="Transform Message" doc:id="ef939e36-8404-4083-84ff-ba2f828e30ed">
+										<ee:message>
+											<ee:set-payload><![CDATA[%dw 2.0
+output application/csv header=false
+--- 
+{
+ReqNo: payload.ReqNo,
+	Initiator: payload.Initiator,
+	PrimarySkills: payload.PrimarySkills,
+	SecondarySkills: payload.SecondarySkills,
+	PrimarySkillCategory: payload.PrimarySkillCategory,
+	PrimarySkillArea:payload.PrimarySkillArea,
+	Customer: payload.Customer,
+	Project: payload.Project,
+	ProjectCode: payload.ProjectCode,
+	Designation: payload.Designation,
+	Job: payload.Job
+	}]]></ee:set-payload>
+										</ee:message>
+									</ee:transform>
+									<file:write doc:name="Write" doc:id="71fb9a0b-8daf-45dc-8787-37332aff703d" path="C:\New folder\Java.csv" mode="APPEND" config-ref="File_Config"/>
+									<logger level="INFO" doc:name="Logger" doc:id="ee41e805-77a4-4108-9dee-ed0539c14dc8" message="file after write #[payload]"/>
+							</when>
+							<when expression="#[payload.PrimarySkills  == 'Mulesoft Others']">
+									<ee:transform doc:name="Transform Message" doc:id="965b530f-b3c1-4550-b5ed-88396e8bf78a">
+										<ee:message>
+											<ee:set-payload><![CDATA[%dw 2.0
+output application/csv header=false
+---
+{
+	ReqNo: payload.ReqNo,
+	Initiator: payload.Initiator,
+	PrimarySkills: payload.PrimarySkills,
+	SecondarySkills: payload.SecondarySkills,
+	PrimarySkillCategory: payload.PrimarySkillCategory,
+	PrimarySkillArea:payload.PrimarySkillArea,
+	Customer: payload.Customer,
+	Project: payload.Project,
+	ProjectCode: payload.ProjectCode,
+	Designation: payload.Designation,
+	Job: payload.Job
+	}]]></ee:set-payload>
+										</ee:message>
+									</ee:transform>
+									<file:write doc:name="Write" doc:id="b9a31b55-940d-44fc-af36-edbd0c2f2846" path="C:\New folder\Mule.csv" mode="APPEND"/>
+								</when>
+								<otherwise>
+								<ee:transform doc:name="Transform Message" doc:id="fcfa6d0a-3620-483b-91d6-26c9df051e11">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/csv header=false
+---
+{
+	ReqNo: payload.ReqNo,
+	Initiator: payload.Initiator,
+	PrimarySkills: payload.PrimarySkills,
+	SecondarySkills: payload.SecondarySkills,
+	PrimarySkillCategory: payload.PrimarySkillCategory,
+	PrimarySkillArea:payload.PrimarySkillArea,
+	Customer: payload.Customer,
+	Project: payload.Project,
+	ProjectCode: payload.ProjectCode,
+	Designation: payload.Designation,
+	Job: payload.Job
+	}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<logger level="INFO" doc:name="Logger" doc:id="d476469f-93c7-46cc-9130-23ab3143330f" message="payload after csv conversion #[payload]" />
+								<file:write doc:name="Write" doc:id="a0422052-31ca-4539-bc76-a92198b05755" config-ref="File_Config" path="C:\New folder\default_skills.csv" mode="APPEND" />
+							</otherwise>
+						</choice>
+						</foreach>
+					</batch:aggregator>
+					<logger level="INFO" doc:name="Logger" doc:id="93654204-e75d-4a5e-aa3f-8d12c3179e86" message="I am inside batch step #[payload]"/>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="5e8f49dc-25c0-422e-a928-7436b91d02f7" message="#[payload]" />
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>
