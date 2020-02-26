@@ -30,7 +30,7 @@ output application/java
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="b61a3435-29e9-463e-946d-a89acadb588d" message="payload in after transformation #[payload]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b61a3435-29e9-463e-946d-a89acadb588d" message=" test cicd payload in after transformation #[payload]"/>
 		<batch:job jobName="Batch_Job" doc:id="cabce157-e4d4-4350-b980-d6733fbe9be9" >
 			<batch:process-records >
 				<batch:step name="Batch_Step" doc:id="cbd1971e-41a7-417d-898c-d755a251e3e0" acceptPolicy="ALL">
